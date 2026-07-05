@@ -113,7 +113,7 @@ MQTTX 是 EMQ 出品的调试工具，**企业里联调 MQTT 的标配**，地�
 
 ### 步骤 3：第一次发布/订阅（GUI）
 
-1. 打开 MQTTX，新建连接：Name `local-sub`，Host `mqtt://localhost`，Port `1883`，其余默认 → Connect
+1. 打开 MQTTX，新建连接：Name `local-sub`，Host `mqtt://127.0.0.1`，Port `1883`，其余默认 → Connect
 2. 连接成功后，订阅 Topic：`wbiot/hello`
 3. 再新建第二个连接 `local-pub`，连接后向 `wbiot/hello` 发布消息：`{"msg": "hello mqtt"}`
 4. 切回 `local-sub`，你应该看到消息到达 ✅
@@ -126,13 +126,17 @@ MQTTX 是 EMQ 出品的调试工具，**企业里联调 MQTT 的标配**，地�
 
 ```bash
 # 终端 1：订阅（# 是多层通配符，订阅 wbiot 下所有主题，第 2 课细讲）
-mqttx sub -t 'wbiot/#' -h localhost -p 1883 -v
+mqttx sub -t 'wbiot/#' -h 127.0.0.1 -p 1883 -v
 
 # 终端 2：发布
-mqttx pub -t 'wbiot/hello' -m '{"msg": "hello from cli"}' -h localhost -p 1883
+mqttx pub -t 'wbiot/hello' -m '{"msg": "hello from cli"}' -h 127.0.0.1 -p 1883
 ```
 
 终端 1 应打印出 topic 和消息。CLI 在写脚本模拟设备、CI 联调时非常常用。
+
+> ⚠️ **为什么用 `127.0.0.1` 而不是 `localhost`**：EMQX 默认只监听 IPv4（`0.0.0.0:1883`），而 mqttx 是 Node.js 程序，在 macOS 上会把 `localhost` 优先解析为 IPv6 的 `::1`——连一个没人监听的地址，于是报 `ECONNREFUSED ::1:1883`。写明确的 IPv4 地址可绕开歧义。
+>
+> 💼 **企业视角**：`ECONNREFUSED` 类问题的标准排查三步：① 服务进程活着吗（`emqx ctl status`）→ ② 端口有人监听吗、监听在哪个协议栈/地址上（`lsof -nP -iTCP:1883 -sTCP:LISTEN`，注意 IPv4/IPv6 列）→ ③ 客户端实际连的是哪个地址（读错误信息里的 IP）。"localhost 解析成 ::1 但服务只听 IPv4" 是跨语言、跨平台的高频坑。
 
 ### 步骤 5：在 Dashboard 里观察
 
