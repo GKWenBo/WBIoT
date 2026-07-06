@@ -10,8 +10,8 @@
 | 第 0 课 | 课程初始化（仓库结构、设计文档、进度表） | ✅ | 2026-07-05 |
 | **阶段一：MQTT 基础与项目起步** | | | |
 | 第 1 课 | IoT 与 MQTT 全景 + 环境搭建 | ✅ | 2026-07-05 |
-| 第 2 课 | MQTT 协议核心机制（CLI 实验课） | 🔵 | |
-| 第 3 课 | Flutter 工程搭建 + 首次连接 | ⬜ | |
+| 第 2 课 | MQTT 协议核心机制（CLI 实验课） | ✅ | 2026-07-06 |
+| 第 3 课 | Flutter 工程搭建 + 首次连接 | 🔵 | |
 | 第 4 课 | 设备模拟器 + 第一个智能设备 | ⬜ | |
 | **阶段二：企业级核心模式** | | | |
 | 第 5 课 | 企业级 Topic 架构与物模型 | ⬜ | |
@@ -32,3 +32,4 @@
 
 - 2026-07-05：课程初始化完成。下一步：开始第 1 课（[教学文档](lessons/lesson-01-iot-mqtt-overview.md)）。
 - 2026-07-05：第 1 课完成（EMQX + MQTTX 环境就绪，完成首次收发；排错实录：ECONNREFUSED ::1 → EMQX 仅监听 IPv4，CLI 统一用 127.0.0.1）。开始第 2 课（[教学文档](lessons/lesson-02-mqtt-protocol-core.md)）。
+- 2026-07-06：第 2 课完成（连接/Topic/QoS 三件套，5 个 CLI 实验全做；排错实录：keepalive 属 conn 子命令而非 sub/pub；验收问答通过，答案存 [answer-key](lessons/lesson-02-answer-key.md)）。开始第 3 课（[教学文档](lessons/lesson-03-flutter-first-connection.md)）。

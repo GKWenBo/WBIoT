@@ -25,7 +25,7 @@
 | 组件 | 选型 |
 |---|---|
 | App | Flutter 3.44 + Riverpod（Android/iOS） |
-| MQTT 客户端库 | `mqtt_client`（3.1.1）；第 15 课引入 `mqtt5_client` |
+| MQTT 客户端库 | `mqtt_client`（10.x，第 3 课实测 10.11.11）；第 15 课引入 `mqtt5_client` |
 | Broker | EMQX（Homebrew 安装，Dashboard 端口 18083） |
 | 设备模拟器 | Dart CLI（`simulator/`），模拟灯/温湿度传感器/空调 |
 | 调试工具 | MQTTX（GUI + CLI） |
