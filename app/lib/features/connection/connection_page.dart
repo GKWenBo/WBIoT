@@ -9,7 +9,7 @@ class ConnectionPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = ref.watch(mqttConfigProvider);
+    final config = ref.watch(mqttConfigControllerProvider);
     final stateAsync = ref.watch(connectionStateProvider);
     final state = stateAsync.value ?? MqttConnectionState.disconnected;
     final connected = state == MqttConnectionState.connected;
@@ -29,7 +29,7 @@ class ConnectionPage extends ConsumerWidget {
                     'iOS模拟器:127.0.0.1 / 安卓模拟器:10.0.2.2 / 真机:Mac局域网IP',
               ),
               onChanged: (v) =>
-                  ref.read(mqttConfigProvider.notifier).updateHost(v.trim()),
+                  ref.read(mqttConfigControllerProvider.notifier).updateHost(v.trim()),
             ),
             const SizedBox(height: 24),
             Row(
@@ -56,7 +56,7 @@ class ConnectionPage extends ConsumerWidget {
                       try {
                         await ref
                             .read(mqttServiceProvider)
-                            .connect(ref.read(mqttConfigProvider));
+                            .connect(ref.read(mqttConfigControllerProvider));
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

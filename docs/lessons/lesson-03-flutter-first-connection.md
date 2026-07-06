@@ -7,7 +7,7 @@
 
 > 📌 **本课代码已实测**：`Flutter 3.44.4 / Dart 3.12.2 / mqtt_client 10.11.11 / flutter_riverpod 3.3.2`，连接本地 EMQX 5.8.8 通过。（注意：网上很多老教程用的是 mqtt_client 3.x/5.x、Riverpod 2.x，API 有差异，以本课为准。）
 >
-> ⚠️ **Riverpod 3.x 两个坑**（本课踩过）：① `StateProvider` 已降级为 legacy，本课改用官方推荐的 `Notifier` + `NotifierProvider`；② `AsyncValue` 取值用 `.value`（可空），2.x 的 `valueOrNull` 已移除。
+> ⚠️ **Riverpod 3.x 要点**：① 本课程约定**全程用注解形式**（`@riverpod` + `build_runner` 代码生成），这是 Riverpod 3.x 官方默认推荐、也是企业主流；② `AsyncValue` 取值用 `.value`（可空），2.x 的 `valueOrNull` 已移除。
 
 ---
 
@@ -113,10 +113,20 @@ flutter run   # 先确认空工程能在你的设备上跑起来（选 iOS 模�
 ### 步骤 2：添加依赖
 
 ```bash
-flutter pub add mqtt_client flutter_riverpod
+# 运行期依赖：MQTT 库、Riverpod、Riverpod 注解
+flutter pub add mqtt_client flutter_riverpod riverpod_annotation
+# 开发期依赖：代码生成器 + build_runner
+flutter pub add dev:riverpod_generator dev:build_runner
 ```
 
-确认 `pubspec.yaml` 的 `dependencies` 里出现了这两个包。
+**关于代码生成（本课程约定的 Riverpod 写法）**：注解形式下，provider 由 `build_runner` 从你的注解自动生成到 `*.g.dart` 文件。两种运行方式：
+
+```bash
+dart run build_runner build   # 生成一次
+dart run build_runner watch    # 开发时挂着，改完自动重新生成（推荐）
+```
+
+> 每次改动带 `@riverpod` 注解的代码后，都要重新生成；用 `watch` 就不用手动跑。生成的 `*.g.dart` 会一起提交进 git。
 
 ### 步骤 3：连接配置 `lib/mqtt/mqtt_config.dart`
 
@@ -211,43 +221,51 @@ class MqttService {
 - `connect()` 失败会**抛异常**（比如地址错、Broker 没开），所以 `try/catch` 后 `rethrow`，让 UI 弹提示
 - `MqttConnectionState` 直接复用库里的枚举（connected / connecting / disconnected / disconnecting / faulted），没必要自己再定义一个
 
-### 步骤 5：Riverpod providers `lib/mqtt/mqtt_providers.dart`
+### 步骤 5：Riverpod providers `lib/mqtt/mqtt_providers.dart`（注解形式）
+
+注解形式下：**写普通函数/类 + 加注解**，provider 由返回类型自动推导（函数返回 `Stream` → StreamProvider，`class extends _$Xxx` → NotifierProvider），不用再手写 `XxxProvider(...)`。
 
 ```dart
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 
 import 'mqtt_config.dart';
 import 'mqtt_service.dart';
 
-// service 单例，随 provider 释放而 dispose
-final mqttServiceProvider = Provider<MqttService>((ref) {
+part 'mqtt_providers.g.dart'; // build_runner 生成，写完注解后跑一次生成
+
+// service 单例。keepAlive: true —— 连接长期存在，不随最后一个监听者移除而 dispose
+@Riverpod(keepAlive: true)
+MqttService mqttService(Ref ref) {
   final service = MqttService();
   ref.onDispose(service.dispose);
   return service;
-});
+}
 
-// 把 service 的状态 Stream 暴露给 UI；未发出前 AsyncValue 处于 loading
-final connectionStateProvider = StreamProvider<MqttConnectionState>((ref) {
-  final service = ref.watch(mqttServiceProvider);
-  return service.stateStream;
-});
+// 函数返回 Stream → 自动成为 StreamProvider
+@Riverpod(keepAlive: true)
+Stream<MqttConnectionState> connectionState(Ref ref) =>
+    ref.watch(mqttServiceProvider).stateStream;
 
-// 连接配置（Riverpod 3.x 用 Notifier，StateProvider 已降级为 legacy）
+// 一个类就是一个 provider（自动生成 mqttConfigControllerProvider）
 // 默认 host 按运行环境改：
 // iOS 模拟器 127.0.0.1 / Android 模拟器 10.0.2.2 / 真机填 Mac 局域网 IP
-class MqttConfigNotifier extends Notifier<MqttConfig> {
+@riverpod
+class MqttConfigController extends _$MqttConfigController {
   @override
   MqttConfig build() =>
       const MqttConfig(host: '127.0.0.1', clientId: 'wbiot-app-001');
 
   void updateHost(String host) => state = state.copyWith(host: host);
 }
-
-final mqttConfigProvider = NotifierProvider<MqttConfigNotifier, MqttConfig>(
-  MqttConfigNotifier.new,
-);
 ```
+
+写完这个文件后跑一次 `dart run build_runner build`（或挂着 `watch`），生成 `mqtt_providers.g.dart`。生成的 provider 名：
+- 函数 `mqttService` → `mqttServiceProvider`
+- 函数 `connectionState` → `connectionStateProvider`
+- 类 `MqttConfigController` → `mqttConfigControllerProvider`
+
+> 💡 `@Riverpod(keepAlive: true)` vs `@riverpod`：默认（小写 `@riverpod`）是 **autoDispose**——没人监听就销毁。连接服务要长期存活，所以显式 `keepAlive: true`；而配置 controller 用默认即可。这个"该不该 autoDispose"的判断，第 11 课还会深入。
 
 ### 步骤 6：UI `lib/features/connection/connection_page.dart`
 
@@ -265,7 +283,7 @@ class ConnectionPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = ref.watch(mqttConfigProvider);
+    final config = ref.watch(mqttConfigControllerProvider);
     final stateAsync = ref.watch(connectionStateProvider);
     final state = stateAsync.value ?? MqttConnectionState.disconnected;
     final connected = state == MqttConnectionState.connected;
@@ -284,7 +302,7 @@ class ConnectionPage extends ConsumerWidget {
                 helperText: 'iOS模拟器:127.0.0.1 / 安卓模拟器:10.0.2.2 / 真机:Mac局域网IP',
               ),
               onChanged: (v) =>
-                  ref.read(mqttConfigProvider.notifier).updateHost(v.trim()),
+                  ref.read(mqttConfigControllerProvider.notifier).updateHost(v.trim()),
             ),
             const SizedBox(height: 24),
             Row(
@@ -307,7 +325,7 @@ class ConnectionPage extends ConsumerWidget {
                       try {
                         await ref
                             .read(mqttServiceProvider)
-                            .connect(ref.read(mqttConfigProvider));
+                            .connect(ref.read(mqttConfigControllerProvider));
                       } catch (e) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

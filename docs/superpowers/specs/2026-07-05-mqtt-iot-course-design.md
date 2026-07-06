@@ -14,7 +14,7 @@
 |---|---|---|
 | 业务场景 | 智能家居 | 覆盖企业 MQTT 绝大多数模式：属性上报/指令下发/在线状态/场景联动 |
 | IoT 设备 | 纯软件模拟（Dart CLI） | 零成本，可灵活演练断网/离线/异常数据等场景 |
-| 状态管理 | Riverpod | 现代企业主流，与 MQTT 消息流/Stream 结合自然 |
+| 状态管理 | Riverpod 3.x（**注解 + 代码生成**） | 现代企业主流，与 MQTT 消息流/Stream 结合自然；全程用 `@riverpod` + build_runner（第 3 课起确立的约定） |
 | 课程结构 | 项目驱动 + 理论穿插 | 每课约 30% 协议理论 + CLI 实验，70% 在 App 中落地 |
 | Broker | EMQX（brew 本地安装） | 国内企业事实标准；无 Docker 环境，brew 版功能完整（Dashboard/认证/ACL/规则引擎） |
 | MQTT 版本 | 3.1.1 主线（`mqtt_client`） | 企业现状主流；第 15 课用 `mqtt5_client` 补齐 5.0 新特性 |
