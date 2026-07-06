@@ -120,12 +120,17 @@ mqttx sub -t 'wbiot/#' -h 127.0.0.1 -p 1883 -i sensor-001
 
 ### 实验 2：心跳观察
 
+> ⚠️ 注意：`mqttx sub`/`pub` 子命令**不提供** keepalive 参数（写错会报 `unknown option`）。做连接层实验要用 `mqttx conn`——它只建连接、不收发消息，正好最纯粹。各子命令支持的参数以 `mqttx <命令> --help` 为准。
+
 ```bash
-# 用 30 秒的 Keep Alive 连接（默认一般是 60）
-mqttx sub -t 'wbiot/hello' -h 127.0.0.1 -p 1883 -i hb-test --keepalive 30
+# 建一条 Keep Alive = 30 秒的裸连接，--debug 显示底层报文日志
+mqttx conn -h 127.0.0.1 -p 1883 -i hb-test -k 30 --debug
 ```
 
-Dashboard → Clients → 点开 `hb-test`：找到 Keep Alive 字段（30）。让它挂着别动几分钟——连接不会断，因为 CLI 在底下悄悄发 PINGREQ。这就是"没有业务消息时连接靠什么活着"的答案。
+观察两处：
+
+1. **终端日志**：连接时能看到 `sendPacket :: packet: { cmd: 'connect' }`（CONNECT 报文实物）和 `_setupPingTimer :: keepalive 30 (seconds)`（心跳定时器启动）；挂住不动等约 30 秒，会看到 `_checkPing` 心跳周期触发——这就是"没有业务消息时连接靠什么活着"的答案
+2. **Dashboard → Monitoring → Clients → 点开 `hb-test`**：Keep Alive 字段显示 30；连接会一直保持，因为客户端在按时发 PINGREQ
 
 ### 实验 3：通配符匹配矩阵
 
