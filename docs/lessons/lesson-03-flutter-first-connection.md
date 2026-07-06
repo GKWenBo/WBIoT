@@ -5,7 +5,9 @@
 > 本课产出：`app/` Flutter 工程，一个能"连接 / 断开 / 实时显示连接状态"的页面，真机或模拟器上能连上 Mac 的 EMQX
 > 本课特点：**第一次写代码**。你 Flutter 熟练，所以工程脚手架、UI 一带而过；重点在 **mqtt_client 库的用法** 和 **把 MQTT 的回调事件桥接进 Riverpod** 这两件新事。
 
-> 📌 **本课代码已实测**：`Flutter 3.44.4 / Dart 3.12.2 / mqtt_client 10.11.11`，连接本地 EMQX 5.8.8 通过。（注意：网上很多老教程用的是 mqtt_client 3.x/5.x，API 有差异，以本课为准。）
+> 📌 **本课代码已实测**：`Flutter 3.44.4 / Dart 3.12.2 / mqtt_client 10.11.11 / flutter_riverpod 3.3.2`，连接本地 EMQX 5.8.8 通过。（注意：网上很多老教程用的是 mqtt_client 3.x/5.x、Riverpod 2.x，API 有差异，以本课为准。）
+>
+> ⚠️ **Riverpod 3.x 两个坑**（本课踩过）：① `StateProvider` 已降级为 legacy，本课改用官方推荐的 `Notifier` + `NotifierProvider`；② `AsyncValue` 取值用 `.value`（可空），2.x 的 `valueOrNull` 已移除。
 
 ---
 
@@ -225,17 +227,26 @@ final mqttServiceProvider = Provider<MqttService>((ref) {
   return service;
 });
 
-// 把 service 的状态 Stream 暴露给 UI；初始给个 disconnected
+// 把 service 的状态 Stream 暴露给 UI；未发出前 AsyncValue 处于 loading
 final connectionStateProvider = StreamProvider<MqttConnectionState>((ref) {
   final service = ref.watch(mqttServiceProvider);
   return service.stateStream;
 });
 
-// 当前连接配置（UI 输入框改它）。默认 host 按你的运行环境改：
+// 连接配置（Riverpod 3.x 用 Notifier，StateProvider 已降级为 legacy）
+// 默认 host 按运行环境改：
 // iOS 模拟器 127.0.0.1 / Android 模拟器 10.0.2.2 / 真机填 Mac 局域网 IP
-final mqttConfigProvider = StateProvider<MqttConfig>((ref) {
-  return const MqttConfig(host: '127.0.0.1', clientId: 'wbiot-app-001');
-});
+class MqttConfigNotifier extends Notifier<MqttConfig> {
+  @override
+  MqttConfig build() =>
+      const MqttConfig(host: '127.0.0.1', clientId: 'wbiot-app-001');
+
+  void updateHost(String host) => state = state.copyWith(host: host);
+}
+
+final mqttConfigProvider = NotifierProvider<MqttConfigNotifier, MqttConfig>(
+  MqttConfigNotifier.new,
+);
 ```
 
 ### 步骤 6：UI `lib/features/connection/connection_page.dart`
@@ -256,7 +267,7 @@ class ConnectionPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(mqttConfigProvider);
     final stateAsync = ref.watch(connectionStateProvider);
-    final state = stateAsync.valueOrNull ?? MqttConnectionState.disconnected;
+    final state = stateAsync.value ?? MqttConnectionState.disconnected;
     final connected = state == MqttConnectionState.connected;
 
     return Scaffold(
@@ -272,8 +283,8 @@ class ConnectionPage extends ConsumerWidget {
                 labelText: 'Broker Host',
                 helperText: 'iOS模拟器:127.0.0.1 / 安卓模拟器:10.0.2.2 / 真机:Mac局域网IP',
               ),
-              onChanged: (v) => ref.read(mqttConfigProvider.notifier).state =
-                  config.copyWith(host: v.trim()),
+              onChanged: (v) =>
+                  ref.read(mqttConfigProvider.notifier).updateHost(v.trim()),
             ),
             const SizedBox(height: 24),
             Row(
