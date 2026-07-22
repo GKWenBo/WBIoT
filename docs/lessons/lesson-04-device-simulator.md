@@ -97,7 +97,7 @@ class LightDevice {
 
   late final MqttServerClient _client;
   Timer? _timer;
-  bool _on = true;
+  final bool _on = true; // 第 6 课加指令下发后改为可变
   int _brightness = 80;
 
   String get _statusTopic => 'wbiot/light/$deviceId/status';
@@ -146,7 +146,7 @@ class LightDevice {
 ```dart
 import 'dart:io';
 
-import 'package:wbiot_simulator/light_device.dart';
+import 'package:simulator/light_device.dart';
 
 /// 用法：dart run bin/simulator.dart [deviceId] [host]
 /// 例：  dart run bin/simulator.dart light-001 127.0.0.1
@@ -166,7 +166,7 @@ Future<void> main(List<String> args) async {
 }
 ```
 
-> `package:wbiot_simulator/...` 里的 `wbiot_simulator` 是 `dart create` 生成的包名（见 `simulator/pubspec.yaml` 的 `name:`）。若你的包名不同，改成你的。
+> `package:simulator/...` 里的 `simulator` 是 `dart create` 生成的包名（见 `simulator/pubspec.yaml` 的 `name:`）。若你的包名不同，改成你的。
 
 #### A4：先单独验证模拟器
 
@@ -201,10 +201,12 @@ final _messageController = StreamController<MqttInboundMessage>.broadcast();
 Stream<MqttInboundMessage> get messageStream => _messageController.stream;
 ```
 
-在 `connect()` 里，构建完 client、**连接之前**挂上 updates 监听（套路第二次登场）：
+在 `connect()` 里，**`await client.connect()` 成功之后**挂上 updates 监听（套路第二次登场）：
+
+> ⚠️ **必须在 connect 之后挂**：`client.updates` 在连接建立前是 `null`，太早挂 `?.listen` 会静默失效、一条消息都收不到。（这是本课实测踩到的坑。）
 
 ```dart
-    // client 构建完成后、await connect() 之前加：
+    // 放在 connect() 里 try/catch 成功连接之后：
     client.updates?.listen((events) {
       for (final e in events) {
         final msg = e.payload as MqttPublishMessage;

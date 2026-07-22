@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 
 import '../../mqtt/mqtt_providers.dart';
+import '../light/light_page.dart';
 
 class ConnectionPage extends ConsumerWidget {
   const ConnectionPage({super.key});
@@ -72,6 +73,16 @@ class ConnectionPage extends ConsumerWidget {
               label: const Text('断开'),
               onPressed: connected
                   ? () => ref.read(mqttServiceProvider).disconnect()
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.lightbulb_outline),
+              label: const Text('查看灯设备'),
+              onPressed: connected
+                  ? () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const LightPage()),
+                      )
                   : null,
             ),
           ],
