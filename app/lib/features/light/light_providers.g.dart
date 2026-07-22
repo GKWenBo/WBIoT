@@ -67,7 +67,7 @@ final class LightStateProvider
   }
 }
 
-String _$lightStateHash() => r'36066a28a8ab3940cd8d49a17fa20b40bc108c1e';
+String _$lightStateHash() => r'5220da05d90ee141a6ab58c2b9606cf0b85932c0';
 
 /// 订阅某盏灯的状态流。deviceId 作为 family 参数（注解形式下就是函数加参数）。
 

@@ -11,10 +11,13 @@ class LightState {
     required this.updatedAt,
   });
 
-  factory LightState.fromJson(Map<String, dynamic> json) => LightState(
-        deviceId: json['deviceId'] as String,
-        on: json['on'] as bool,
-        brightness: json['brightness'] as int,
-        updatedAt: DateTime.fromMillisecondsSinceEpoch(json['ts'] as int),
-      );
+  factory LightState.fromJson(Map<String, dynamic> json) {
+    final params = json['params'] as Map<String, dynamic>;
+    return LightState(
+      deviceId: json['deviceId'] as String,
+      on: params['on'] as bool,
+      brightness: params['brightness'] as int,
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(json['ts'] as int),
+    );
+  }
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../mqtt/mqtt_providers.dart';
+import '../../mqtt/topics.dart';
 import 'light_state.dart';
 
 part 'light_providers.g.dart';
@@ -11,7 +12,7 @@ part 'light_providers.g.dart';
 @riverpod
 Stream<LightState> lightState(Ref ref, String deviceId) {
   final service = ref.watch(mqttServiceProvider);
-  final topic = 'wbiot/light/$deviceId/status';
+  final topic = Topics.propertyPost('light', deviceId);
 
   service.subscribe(topic); // 需已连接；未连接时第 8 课的重连会补订阅
   return service.messageStream

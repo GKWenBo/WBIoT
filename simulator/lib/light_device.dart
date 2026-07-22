@@ -7,18 +7,25 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 
 /// 模拟一盏智能灯：连上 Broker，每 3 秒上报一次状态。
 class LightDevice {
-  final String deviceId;
+  final String productKey; // 产品/品类标识
+  final String deviceId; // 即 deviceName
   final String host;
   final int port;
 
-  LightDevice({required this.deviceId, this.host = '127.0.0.1', this.port = 1883});
+  LightDevice({
+    required this.deviceId,
+    this.productKey = 'light',
+    this.host = '127.0.0.1',
+    this.port = 1883,
+  });
 
   late final MqttServerClient _client;
   Timer? _timer;
   final bool _on = true; // 第 6 课加指令下发后改为可变
   int _brightness = 80;
 
-  String get _statusTopic => 'wbiot/light/$deviceId/status';
+  String get _propertyPostTopic =>
+      'wbiot/$productKey/$deviceId/property/post';
 
   Future<void> start() async {
     _client = MqttServerClient.withPort(host, deviceId, port)
@@ -40,14 +47,14 @@ class LightDevice {
 
     final payload = jsonEncode({
       'deviceId': deviceId,
-      'on': _on,
-      'brightness': _brightness,
       'ts': DateTime.now().millisecondsSinceEpoch,
+      'params': {'on': _on, 'brightness': _brightness},
     });
 
     final builder = MqttClientPayloadBuilder()..addString(payload);
-    _client.publishMessage(_statusTopic, MqttQos.atLeastOnce, builder.payload!);
-    print('[${_hhmmss()}] 上报 → $_statusTopic  $payload');
+    _client.publishMessage(
+        _propertyPostTopic, MqttQos.atLeastOnce, builder.payload!);
+    print('[${_hhmmss()}] 上报 → $_propertyPostTopic  $payload');
   }
 
   void stop() {

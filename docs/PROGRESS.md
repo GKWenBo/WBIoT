@@ -2,6 +2,7 @@
 
 > 规则：**严格顺序解锁** —— 上一课的验收标准全部通过后，才能开始下一课。
 > 状态说明：⬜ 未开始 ｜ 🔵 进行中 ｜ ✅ 已完成（附完成日期）
+> 工作模式（2026-07-22 起）：**缓冲式领跑** —— 导师提前实现并验证后续 2-3 课的参考代码（每课打 git tag `lesson-NN`，`git checkout lesson-NN` 可单独回看该课状态），学员按自己节奏逐课验证。下方状态列表示**学员验证进度**，不代表参考代码是否就绪。
 
 ## 总览
 
@@ -34,3 +35,4 @@
 - 2026-07-05：第 1 课完成（EMQX + MQTTX 环境就绪，完成首次收发；排错实录：ECONNREFUSED ::1 → EMQX 仅监听 IPv4，CLI 统一用 127.0.0.1）。开始第 2 课（[教学文档](lessons/lesson-02-mqtt-protocol-core.md)）。
 - 2026-07-06：第 2 课完成（连接/Topic/QoS 三件套，5 个 CLI 实验全做；排错实录：keepalive 属 conn 子命令而非 sub/pub；验收问答通过，答案存 [answer-key](lessons/lesson-02-answer-key.md)）。开始第 3 课（[教学文档](lessons/lesson-03-flutter-first-connection.md)）。
 - 2026-07-06：第 3 课完成（Flutter 工程 app/ 搭建，MqttService 封装 + Riverpod 集成，真机验收连上 EMQX）。技术约定：Riverpod 3.x 全程注解形式（@riverpod + build_runner）；mqtt_client 10.11.11。开始第 4 课（[教学文档](lessons/lesson-04-device-simulator.md)）。
+- 2026-07-22：工作模式转为**缓冲式领跑**（见顶部说明）。已完成并入库、打 tag 的参考实现：第 4 课（`simulator/` 灯设备 + app 订阅实时展示，tag `lesson-04`，[文档](lessons/lesson-04-device-simulator.md)）、第 5 课（Topic 规范 + 物模型重构 `property/post`+`params` 信封，tag `lesson-05`，[文档](lessons/lesson-05-topic-thing-model.md)）。实测均连 EMQX 通过。第 4 课排错实录：`mqtt_client` 的 `client.updates` 必须在 `connect()` 成功之后再挂监听，连接前为 `null`、过早 `?.listen` 会静默失效收不到消息。
